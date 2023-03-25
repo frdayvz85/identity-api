@@ -40,15 +40,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const start = new Date();
-    console.log({ text1, text2 });
-    const response = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: "Say this is a test",
-      temperature: 0,
-      max_tokens: 7,
-    });
 
-    console.log({ response });
     const embeddings = await Promise.all(
       [text1, text2].map(async (text) => {
         const res = await openai.createEmbedding({
