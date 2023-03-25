@@ -34,9 +34,14 @@ export default withAuth(
     // Manage route protection
     const token = await getToken({ req });
     const isAuth = !!token;
-    const isAuthPage = req.nextUrl.pathname.startsWith("/login");
+    const isAuthPage =
+      req.nextUrl.pathname.startsWith("/login") ||
+      req.nextUrl.pathname.startsWith("/register");
 
     const sensitiveRoutes = ["/dashboard"];
+
+    const res = NextResponse.next();
+    res.headers.set("Content-Security-Policy", "default-src 'self'");
 
     if (isAuthPage) {
       if (isAuth) {
@@ -50,7 +55,14 @@ export default withAuth(
       !isAuth &&
       sensitiveRoutes.some((route) => pathname.startsWith(route))
     ) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      let from = req.nextUrl.pathname;
+      if (req.nextUrl.search) {
+        from += req.nextUrl.search;
+      }
+
+      return NextResponse.redirect(
+        new URL(`/login?from=${encodeURIComponent(from)}`, req.url)
+      );
     }
   },
   {
@@ -66,5 +78,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/api/:path*"],
+  matcher: ["/", "/login", "/register", "/dashboard/:path*", "/api/:path*"],
 };

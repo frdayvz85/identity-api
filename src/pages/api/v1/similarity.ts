@@ -13,9 +13,16 @@ const reqSchema = z.object({
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const body = req.body as unknown;
 
+  console.log("Hey runnn");
+
   const apiKey = req.headers.authorization;
   if (!apiKey) {
     return res.status(401).json({ error: "Unauthorized" });
+  }
+  const parsed = reqSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Bad Request" });
   }
 
   try {
@@ -33,6 +40,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const start = new Date();
+    console.log({ text1, text2 });
+    const response = await openai.createCompletion({
+      model: "text-davinci-003",
+      prompt: "Say this is a test",
+      temperature: 0,
+      max_tokens: 7,
+    });
+
+    console.log({ response });
     const embeddings = await Promise.all(
       [text1, text2].map(async (text) => {
         const res = await openai.createEmbedding({
@@ -44,7 +60,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       })
     );
 
+    console.log("embeddings: ", embeddings);
+
     const similarity = cosineSimilarity(embeddings[0], embeddings[1]);
+    console.log({ similarity });
 
     const duration = new Date().getTime() - start.getTime();
 
@@ -62,6 +81,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json({ success: true, text1, text2, similarity });
   } catch (error) {
+    console.log(error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.issues });
     }
